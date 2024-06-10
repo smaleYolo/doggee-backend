@@ -33,7 +33,7 @@ backend-doggee
 
 1. Установите зависимости:
 ```console
-bash npm install
+npm install
 ```
 
 2. Создайте файл `.env` в корне проекта и добавьте в него параметры подключения к базе данных:
@@ -67,7 +67,7 @@ node_modules/
 
 Запустите сервер с помощью команды:
 ```console
-bash npm start
+npm run start
 ```
 
 
