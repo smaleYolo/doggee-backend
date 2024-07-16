@@ -13,7 +13,7 @@ const port = process.env.PORT || 3001;
 const SECRET_KEY = 'doggee-secret';
 const REFRESH_SECRET_KEY = 'doggee-refresh-secret';
 
-const expiresIn = '1m';
+const expiresIn = '30m';
 const refreshExpiresIn = '7d';
 
 app.use(bodyParser.urlencoded({ extended: true }));
