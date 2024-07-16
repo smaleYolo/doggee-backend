@@ -2,30 +2,27 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 const User = require('./user'); // Импорт модели User
 
-const Dog = sequelize.define('Dog', {
+const RefreshToken = sequelize.define('RefreshToken', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
     },
-    name: {
+    token: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    breed: {
-        type: DataTypes.STRING
-    },
-    ownerId: {
+    userId: {
         type: DataTypes.INTEGER,
         references: {
-            model: User, // Определение связи с моделью User
+            model: User,
             key: 'id'
         }
     }
 }, {
-    tableName: 'Dogs'
+    tableName: 'RefreshTokens'
 });
 
-Dog.belongsTo(User, { foreignKey: 'ownerId' });
+RefreshToken.belongsTo(User, { foreignKey: 'userId' });
 
-module.exports = Dog;
+module.exports = RefreshToken;

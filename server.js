@@ -10,8 +10,11 @@ const { check, validationResult } = require('express-validator');
 const app = express();
 const port = process.env.PORT || 3001;
 
-const SECRET_KEY = 'your_secret_key';
-const expiresIn = '1h';
+const SECRET_KEY = 'doggee-secret';
+const REFRESH_SECRET_KEY = 'doggee-refresh-secret';
+
+const expiresIn = '1m';
+const refreshExpiresIn = '7d';
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -25,8 +28,16 @@ function createToken(payload) {
     return jwt.sign(payload, SECRET_KEY, { expiresIn });
 }
 
+function createRefreshToken(payload) {
+    return jwt.sign(payload, REFRESH_SECRET_KEY, { expiresIn: refreshExpiresIn });
+}
+
 function verifyToken(token) {
     return jwt.verify(token, SECRET_KEY, (err, decode) => decode !== undefined ? decode : err);
+}
+
+function verifyRefreshToken(token) {
+    return jwt.verify(token, REFRESH_SECRET_KEY, (err, decode) => decode !== undefined ? decode : err);
 }
 
 async function isAuthenticated({ username, password }) {
@@ -39,10 +50,11 @@ async function isAuthenticated({ username, password }) {
 const db = require('./models');
 const User = db.User;
 const Dog = db.Dog;
+const RefreshToken = db.RefreshToken; // Импорт модели RefreshToken
 
 // Middleware для проверки авторизации
 app.use((req, res, next) => {
-    if (req.originalUrl === '/api-docs' || req.originalUrl.startsWith('/api-docs/') || req.originalUrl === '/auth/register' || req.originalUrl === '/auth/login') {
+    if (req.originalUrl === '/api-docs' || req.originalUrl.startsWith('/api-docs/') || req.originalUrl === '/auth/register' || req.originalUrl === '/auth/login' || req.originalUrl === '/auth/refresh-token') {
         next();
         return;
     }
@@ -108,7 +120,39 @@ app.post('/auth/login', [
 
     const user = await User.findOne({ where: { username } });
     const access_token = createToken({ username: user.username, id: user.id });
-    res.status(200).json({ access_token, userId: user.id });
+    const refresh_token = createRefreshToken({ username: user.username, id: user.id });
+
+    // Сохранение рефреш токена в базе данных
+    await RefreshToken.create({ token: refresh_token, userId: user.id });
+
+    res.status(200).json({ access_token, refresh_token, userId: user.id });
+});
+
+app.post('/auth/refresh-token', async (req, res) => {
+    const { refresh_token } = req.body;
+
+    if (!refresh_token) {
+        return res.status(401).json({ message: 'Refresh token not provided' });
+    }
+
+    try {
+        const decoded = verifyRefreshToken(refresh_token);
+
+        const tokenInDb = await RefreshToken.findOne({ where: { token: refresh_token, userId: decoded.id } });
+        if (!tokenInDb) {
+            return res.status(401).json({ message: 'Invalid refresh token' });
+        }
+
+        const new_access_token = createToken({ username: decoded.username, id: decoded.id });
+        const new_refresh_token = createRefreshToken({ username: decoded.username, id: decoded.id });
+
+        // Обновление рефреш токена в базе данных
+        await tokenInDb.update({ token: new_refresh_token });
+
+        res.status(200).json({ access_token: new_access_token, refresh_token: new_refresh_token });
+    } catch (err) {
+        res.status(401).json({ message: 'Invalid refresh token' });
+    }
 });
 
 // Маршруты для профиля пользователя
