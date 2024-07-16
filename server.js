@@ -97,6 +97,7 @@ app.post('/auth/register', [
         return;
     }
 
+
     const hashedPassword = bcrypt.hashSync(password, 8);
     const user = await User.create({ username, password: hashedPassword });
 
