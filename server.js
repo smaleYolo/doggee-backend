@@ -90,17 +90,30 @@ app.post('/auth/register', [
         return res.status(400).json({ errors: errors.array() });
     }
     const { username, password } = req.body;
-    const user = await User.findOne({ where: { username } });
+    const existingUser = await User.findOne({ where: { username } });
 
-    if (user) {
+    if (existingUser) {
         res.status(401).json({ message: 'User already exists' });
         return;
     }
 
     const hashedPassword = bcrypt.hashSync(password, 8);
-    await User.create({ username, password: hashedPassword });
+    const user = await User.create({ username, password: hashedPassword });
 
-    res.status(200).json({ message: 'User created successfully' });
+    // Создание токенов для нового пользователя
+    const access_token = createToken({ username: user.username, id: user.id });
+    const refresh_token = createRefreshToken({ username: user.username, id: user.id });
+
+    // Сохранение рефреш токена в базе данных
+    await RefreshToken.create({ token: refresh_token, userId: user.id });
+
+    // Возвращение токенов и данных пользователя в ответе
+    res.status(200).json({
+        message: 'User created successfully',
+        access_token,
+        refresh_token,
+        userId: user.id
+    });
 });
 
 app.post('/auth/login', [
