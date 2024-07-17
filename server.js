@@ -97,7 +97,6 @@ app.post('/auth/register', [
         return;
     }
 
-
     const hashedPassword = bcrypt.hashSync(password, 8);
     const user = await User.create({ username, password: hashedPassword });
 
@@ -109,7 +108,7 @@ app.post('/auth/register', [
     await RefreshToken.create({ token: refresh_token, userId: user.id });
 
     // Возвращение токенов и данных пользователя в ответе
-    res.status(200).json({
+    res.status(201).json({
         message: 'User created successfully',
         access_token,
         refresh_token,
@@ -175,7 +174,7 @@ app.get('/users/:id/profile', async (req, res) => {
         include: [Dog]
     });
     if (!user) {
-        res.status(404).json({});
+        res.status(404).json({ message: 'User not found' });
         return;
     }
     res.status(200).json({
@@ -191,56 +190,14 @@ app.get('/users/:id/profile', async (req, res) => {
 app.put('/users/:id/profile', async (req, res) => {
     const user = await User.findByPk(req.params.id);
     if (!user) {
-        res.status(404).json({});
+        res.status(404).json({ message: 'User not found' });
         return;
     }
     await user.update(req.body);
-    res.status(200).json({});
+    res.status(200).json({ message: 'Profile updated successfully' });
 });
 
-// Маршруты для работы с собаками
-app.get('/dogs', async (req, res) => {
-    const dogs = await Dog.findAll();
-    res.status(200).json(dogs);
-});
-
-app.get('/dogs/:id', async (req, res) => {
-    const dog = await Dog.findByPk(req.params.id);
-    if (!dog) {
-        res.status(404).json({});
-        return;
-    }
-    res.status(200).json(dog);
-});
-
-app.post('/dogs', async (req, res) => {
-    const newDog = req.body;
-    newDog.ownerId = req.user.id;
-    const dog = await Dog.create(newDog);
-    res.status(200).json(dog);
-});
-
-app.put('/dogs/:id', async (req, res) => {
-    const dog = await Dog.findByPk(req.params.id);
-    if (!dog || dog.ownerId !== req.user.id) {
-        res.status(404).json({ message: 'Dog not found or access denied' });
-        return;
-    }
-    await dog.update(req.body);
-    res.status(200).json({});
-});
-
-app.delete('/dogs/:id', async (req, res) => {
-    const dog = await Dog.findByPk(req.params.id);
-    if (!dog || dog.ownerId !== req.user.id) {
-        res.status(404).json({ message: 'Dog not found or access denied' });
-        return;
-    }
-    await dog.destroy();
-    res.status(200).json({});
-});
-
-// Маршрут для создания собаки и добавления её в профиль пользователя
+// Создание собаки для пользователя
 app.post('/users/:id/dogs', async (req, res) => {
     const user = await User.findByPk(req.params.id);
     if (!user) {
@@ -252,10 +209,13 @@ app.post('/users/:id/dogs', async (req, res) => {
     newDog.ownerId = user.id;
 
     const dog = await Dog.create(newDog);
-    res.status(200).json(dog);
+    res.status(201).json({
+        message: 'Dog created successfully',
+        dog
+    });
 });
 
-// Маршрут для получения всех собак пользователя
+// Получение списка собак пользователя
 app.get('/users/:id/dogs', async (req, res) => {
     const user = await User.findByPk(req.params.id, { include: Dog });
     if (!user) {
@@ -263,6 +223,71 @@ app.get('/users/:id/dogs', async (req, res) => {
         return;
     }
     res.status(200).json(user.Dogs);
+});
+
+// Получение данных о конкретной собаке пользователя
+app.get('/users/:userId/dogs/:dogId', async (req, res) => {
+    const user = await User.findByPk(req.params.userId, { include: Dog });
+    if (!user) {
+        res.status(404).json({ message: 'User not found' });
+        return;
+    }
+
+    const dog = user.Dogs.find(d => d.id === parseInt(req.params.dogId));
+    if (!dog) {
+        res.status(404).json({ message: 'Dog not found' });
+        return;
+    }
+    res.status(200).json(dog);
+});
+
+// Обновление конкретной собаки пользователя
+app.put('/users/:userId/dogs/:dogId', async (req, res) => {
+    const user = await User.findByPk(req.params.userId, { include: Dog });
+    if (!user) {
+        res.status(404).json({ message: 'User not found' });
+        return;
+    }
+
+    const dog = user.Dogs.find(d => d.id === parseInt(req.params.dogId));
+    if (!dog) {
+        res.status(404).json({ message: 'Dog not found' });
+        return;
+    }
+
+    if (dog.ownerId !== req.user.id) {
+        res.status(403).json({ message: 'Access denied' });
+        return;
+    }
+
+    await dog.update(req.body);
+    res.status(200).json({
+        message: 'Dog updated successfully',
+        dog
+    });
+});
+
+// Удаление конкретной собаки пользователя
+app.delete('/users/:userId/dogs/:dogId', async (req, res) => {
+    const user = await User.findByPk(req.params.userId, { include: Dog });
+    if (!user) {
+        res.status(404).json({ message: 'User not found' });
+        return;
+    }
+
+    const dog = user.Dogs.find(d => d.id === parseInt(req.params.dogId));
+    if (!dog) {
+        res.status(404).json({ message: 'Dog not found' });
+        return;
+    }
+
+    if (dog.ownerId !== req.user.id) {
+        res.status(403).json({ message: 'Access denied' });
+        return;
+    }
+
+    await dog.destroy();
+    res.status(200).json({ message: 'Dog deleted successfully' });
 });
 
 // Убедитесь, что путь к Swagger UI правильный
