@@ -15,17 +15,23 @@ Backend-Doggee - это RESTful API сервер, построенный на No
 
 ## Структура проекта
 ```
-backend-doggee 
-├── config 
-│ └── database.js 
-├── models 
-│ ├── dog.js 
-│ ├── index.js 
-│ └── user.js 
-├── node_modules 
-├── package.json 
-├── package-lock.json 
-├── server.js 
+backend-doggee
+├── config
+│   ├── config.js
+│   └── database.js
+├── migrations
+├── models
+│   ├── dog.js
+│   ├── index.js
+│   ├── refreshToken.js
+│   └── user.js
+├── node_modules
+├── .env
+├── .gitignore
+├── package.json
+├── package-lock.json
+├── README.md
+├── server.js
 └── swagger.json
 ```
 
@@ -44,7 +50,7 @@ DATABASE_URL=postgres://username:password@host:port/database
 3. Настройте файл config/database.js:
 ```
 const { Sequelize } = require('sequelize');
-require('dotenv').config(); // Импортируйте и настройте dotenv
+require('dotenv').config(); 
 
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
@@ -79,6 +85,7 @@ npm run start
 
 - POST `/auth/register` - Регистрация пользователя
 - POST `/auth/login` - Вход пользователя
+- POST `/auth/refresh-token` - Обновление токена
 
 ### Пользователи
 
@@ -89,11 +96,10 @@ npm run start
 
 ### Собаки
 
-- GET `/dogs` - Получение всех собак
-- GET `/dogs/:id` - Получение информации о собаке по ID
-- POST `/dogs` - Создание новой собаки
-- PUT `/dogs/:id` - Обновление информации о собаке
-- DELETE `/dogs/:id` - Удаление собаки
+- GET `/breeds` - Получение списка пород
+- GET `/users/:userId/dogs/:dogId` - Получение данных о конкретной собаке пользователя
+- PUT `/users/:userId/dogs/:dogId` - Обновление информации о конкретной собаке пользователя
+- DELETE `/users/:userId/dogs/:dogId` - Удаление конкретной собаки пользователя
 
 ## Документация API
 
