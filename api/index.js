@@ -4,8 +4,11 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require('../swagger.json');
+const fs = require('fs');
+const path = require('path');
 const { check, validationResult } = require('express-validator');
+
+const swaggerDocument = JSON.parse(fs.readFileSync(path.join(__dirname, '../swagger.json')));
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -19,7 +22,6 @@ const refreshExpiresIn = '7d';
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// Настраиваем CORS
 app.use(
     cors({
         origin: 'http://localhost:5173',
@@ -30,7 +32,6 @@ app.use(
     })
 );
 
-// Middleware для обработки preflight-запросов
 app.options('*', cors());
 
 function createToken(payload) {
@@ -59,13 +60,11 @@ async function isAuthenticated({ username, password }) {
     return bcrypt.compareSync(password, user.password);
 }
 
-// Импортируйте модели и ассоциации
 const db = require('../models');
 const User = db.User;
 const Dog = db.Dog;
-const RefreshToken = db.RefreshToken; // Импорт модели RefreshToken
+const RefreshToken = db.RefreshToken;
 
-// Middleware для проверки авторизации
 app.use((req, res, next) => {
     if (
         req.originalUrl === '/api-docs' ||
@@ -126,17 +125,14 @@ app.post(
         const hashedPassword = bcrypt.hashSync(password, 8);
         const user = await User.create({ username, password: hashedPassword });
 
-        // Создание токенов для нового пользователя
         const access_token = createToken({ username: user.username, id: user.id });
         const refresh_token = createRefreshToken({
             username: user.username,
             id: user.id,
         });
 
-        // Сохранение рефреш токена в базе данных
         await RefreshToken.create({ token: refresh_token, userId: user.id });
 
-        // Возвращение токенов и данных пользователя в ответе
         res.status(201).json({
             message: 'backend.success.userCreated',
             access_token,
@@ -175,7 +171,6 @@ app.post(
             id: user.id,
         });
 
-        // Сохранение рефреш токена в базе данных
         await RefreshToken.create({ token: refresh_token, userId: user.id });
 
         res.status(200).json({
@@ -213,7 +208,6 @@ app.post('/auth/refresh-token', async (req, res) => {
             id: decoded.id,
         });
 
-        // Обновление рефреш токена в базе данных
         await tokenInDb.update({ token: new_refresh_token });
 
         res.status(200).json({
@@ -226,7 +220,6 @@ app.post('/auth/refresh-token', async (req, res) => {
     }
 });
 
-// Маршруты для профиля пользователя
 app.get('/users/:id/profile', async (req, res) => {
     const user = await User.findByPk(req.params.id, {
         include: [Dog],
@@ -242,7 +235,7 @@ app.get('/users/:id/profile', async (req, res) => {
         name: user.name,
         city: user.city,
         birthdate: user.birthdate,
-        dogs: user.Dogs, // Добавление списка собак пользователя
+        dogs: user.Dogs,
     });
 });
 
@@ -256,7 +249,6 @@ app.put('/users/:id/profile', async (req, res) => {
     res.status(200).json({ message: 'backend.success.profileUpdated' });
 });
 
-// Создание собаки для пользователя
 app.post('/users/:id/dogs', [
     check('name').notEmpty().withMessage('backend.failure.nameRequired'),
     check('weight').isFloat({ min: 0 }).withMessage('backend.failure.positiveWeight'),
@@ -282,7 +274,6 @@ app.post('/users/:id/dogs', [
     });
 });
 
-// Предопределённый список пород собак
 const dogBreeds = [
     'dogBreeds.LabradorRetriever',
     'dogBreeds.GermanShepherd',
@@ -336,7 +327,6 @@ const dogBreeds = [
     'dogBreeds.Whippet'
 ];
 
-// Маршрут для получения списка пород
 app.get('/breeds', async (req, res) => {
     try {
         res.status(200).json({
@@ -348,7 +338,6 @@ app.get('/breeds', async (req, res) => {
     }
 });
 
-// Получение списка собак пользователя
 app.get('/users/:id/dogs', async (req, res) => {
     const user = await User.findByPk(req.params.id, { include: Dog });
     if (!user) {
@@ -361,7 +350,6 @@ app.get('/users/:id/dogs', async (req, res) => {
     });
 });
 
-// Получение данных о конкретной собаке пользователя
 app.put('/users/:userId/dogs/:dogId', [
     check('weight').optional().isFloat({ min: 0 }).withMessage('backend.failure.positiveWeight'),
 ], async (req, res) => {
@@ -394,7 +382,6 @@ app.put('/users/:userId/dogs/:dogId', [
     });
 });
 
-// Обновление конкретной собаки пользователя
 app.put('/users/:userId/dogs/:dogId', async (req, res) => {
     const user = await User.findByPk(req.params.userId, { include: Dog });
     if (!user) {
@@ -420,7 +407,6 @@ app.put('/users/:userId/dogs/:dogId', async (req, res) => {
     });
 });
 
-// Удаление конкретной собаки пользователя
 app.delete('/users/:userId/dogs/:dogId', async (req, res) => {
     const user = await User.findByPk(req.params.userId, { include: Dog });
     if (!user) {
@@ -443,7 +429,6 @@ app.delete('/users/:userId/dogs/:dogId', async (req, res) => {
     res.status(200).json({ message: 'backend.success.dogDeleted' });
 });
 
-// Убедитесь, что путь к Swagger UI правильный
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 db.sequelize.sync().then(() => {
