@@ -440,8 +440,7 @@
               "application/json": [
                 "dogBreeds.LabradorRetriever",
                 "dogBreeds.GermanShepherd",
-                "dogBreeds.GoldenRetriever",
-                // другие породы
+                "dogBreeds.GoldenRetriever"
               ]
             }
           }
