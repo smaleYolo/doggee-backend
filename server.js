@@ -270,6 +270,69 @@ app.post('/users/:id/dogs', [
 	});
 });
 
+// Предопределённый список пород собак
+const dogBreeds = [
+	'dogBreeds.LabradorRetriever',
+	'dogBreeds.GermanShepherd',
+	'dogBreeds.GoldenRetriever',
+	'dogBreeds.FrenchBulldog',
+	'dogBreeds.Bulldog',
+	'dogBreeds.Poodle',
+	'dogBreeds.Beagle',
+	'dogBreeds.Rottweiler',
+	'dogBreeds.GermanShorthairedPointer',
+	'dogBreeds.YorkshireTerrier',
+	'dogBreeds.Boxer',
+	'dogBreeds.Dachshund',
+	'dogBreeds.PembrokeWelshCorgi',
+	'dogBreeds.SiberianHusky',
+	'dogBreeds.AustralianShepherd',
+	'dogBreeds.GreatDane',
+	'dogBreeds.DobermanPinscher',
+	'dogBreeds.CavalierKingCharlesSpaniel',
+	'dogBreeds.MiniatureSchnauzer',
+	'dogBreeds.ShihTzu',
+	'dogBreeds.BostonTerrier',
+	'dogBreeds.BerneseMountainDog',
+	'dogBreeds.Pomeranian',
+	'dogBreeds.Havanese',
+	'dogBreeds.ShetlandSheepdog',
+	'dogBreeds.Brittany',
+	'dogBreeds.EnglishSpringerSpaniel',
+	'dogBreeds.Pug',
+	'dogBreeds.Mastiff',
+	'dogBreeds.CockerSpaniel',
+	'dogBreeds.Vizsla',
+	'dogBreeds.CaneCorso',
+	'dogBreeds.Chihuahua',
+	'dogBreeds.BorderCollie',
+	'dogBreeds.BassetHound',
+	'dogBreeds.BelgianMalinois',
+	'dogBreeds.WestHighlandWhiteTerrier',
+	'dogBreeds.Collie',
+	'dogBreeds.Weimaraner',
+	'dogBreeds.Newfoundland',
+	'dogBreeds.RhodesianRidgeback',
+	'dogBreeds.ShibaInu',
+	'dogBreeds.BichonFrise',
+	'dogBreeds.Akita',
+	'dogBreeds.StBernard',
+	'dogBreeds.Bloodhound',
+	'dogBreeds.ChesapeakeBayRetriever',
+	'dogBreeds.Samoyed',
+	'dogBreeds.AustralianCattleDog',
+	'dogBreeds.Whippet'
+];
+
+// Маршрут для получения списка пород
+app.get('/breeds', async (req, res) => {
+	try {
+		res.status(200).json(dogBreeds);
+	} catch (error) {
+		res.status(500).json({ message: 'Error retrieving breeds', error });
+	}
+});
+
 
 // Получение списка собак пользователя
 app.get('/users/:id/dogs', async (req, res) => {

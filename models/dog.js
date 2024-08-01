@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize')
 const sequelize = require('../config/database')
-const User = require('./user') // Импорт модели User
+const User = require('./user')
 
 const Dog = sequelize.define(
 	'Dog',
@@ -16,19 +16,20 @@ const Dog = sequelize.define(
 		},
 		breed: {
 			type: DataTypes.STRING,
+			allowNull: false,
 		},
 		birthdate: {
-			type: DataTypes.DATE, // Поле даты рождения
+			type: DataTypes.DATE,
 			allowNull: true,
 		},
 		weight: {
-			type: DataTypes.FLOAT, // Поле веса
+			type: DataTypes.FLOAT,
 			allowNull: true,
 		},
 		ownerId: {
 			type: DataTypes.INTEGER,
 			references: {
-				model: User, // Определение связи с моделью User
+				model: User,
 				key: 'id',
 			},
 		},

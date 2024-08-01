@@ -8,19 +8,6 @@
   "host": "localhost:3001",
   "basePath": "/",
   "schemes": ["http"],
-  "securityDefinitions": {
-    "Bearer": {
-      "type": "apiKey",
-      "name": "Authorization",
-      "in": "header",
-      "description": "Введите ваш Bearer токен следующим образом: Bearer {token}"
-    }
-  },
-  "security": [
-    {
-      "Bearer": []
-    }
-  ],
   "paths": {
     "/auth/register": {
       "post": {
@@ -28,50 +15,56 @@
         "summary": "Регистрация пользователя",
         "parameters": [
           {
-            "in": "body",
             "name": "body",
-            "description": "Данные для регистрации",
+            "in": "body",
             "required": true,
             "schema": {
               "type": "object",
               "properties": {
-                "username": { "type": "string" },
-                "password": { "type": "string" }
+                "username": { "type": "string", "example": "johndoe" },
+                "password": { "type": "string", "example": "password123" }
               }
             }
           }
         ],
         "responses": {
           "201": {
-            "description": "Пользователь успешно создан",
-            "examples": {
-              "application/json": {
-                "message": "User created successfully",
-                "access_token": "eyJhbGciOiJIUzI1NiIsInR5...",
-                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5...",
-                "userId": 1
+            "description": "User created successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "User created successfully" },
+                "access_token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+                "refresh_token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+                "userId": { "type": "integer", "example": 1 }
               }
             }
           },
           "400": {
-            "description": "Ошибка валидации",
-            "examples": {
-              "application/json": {
-                "errors": [
-                  {
-                    "msg": "Username must be at least 5 chars long",
-                    "param": "username",
-                    "location": "body"
+            "description": "Validation error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "msg": { "type": "string", "example": "Username must be at least 5 chars long" },
+                      "param": { "type": "string", "example": "username" },
+                      "location": { "type": "string", "example": "body" }
+                    }
                   }
-                ]
+                }
               }
             }
           },
           "401": {
-            "description": "Пользователь уже существует",
-            "examples": {
-              "application/json": {
-                "message": "User already exists"
+            "description": "User already exists",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "User already exists" }
               }
             }
           }
@@ -81,52 +74,58 @@
     "/auth/login": {
       "post": {
         "tags": ["Auth"],
-        "summary": "Вход пользователя",
+        "summary": "Логин пользователя",
         "parameters": [
           {
-            "in": "body",
             "name": "body",
-            "description": "Данные для входа",
+            "in": "body",
             "required": true,
             "schema": {
               "type": "object",
               "properties": {
-                "username": { "type": "string" },
-                "password": { "type": "string" }
+                "username": { "type": "string", "example": "johndoe" },
+                "password": { "type": "string", "example": "password123" }
               }
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Успешный вход",
-            "examples": {
-              "application/json": {
-                "access_token": "eyJhbGciOiJIUzI1NiIsInR5...",
-                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5...",
-                "userId": 1
+            "description": "User logged in successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "access_token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+                "refresh_token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+                "userId": { "type": "integer", "example": 1 }
               }
             }
           },
           "400": {
-            "description": "Ошибка валидации",
-            "examples": {
-              "application/json": {
-                "errors": [
-                  {
-                    "msg": "Username must be at least 5 chars long",
-                    "param": "username",
-                    "location": "body"
+            "description": "Validation error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "msg": { "type": "string", "example": "Username must be at least 5 chars long" },
+                      "param": { "type": "string", "example": "username" },
+                      "location": { "type": "string", "example": "body" }
+                    }
                   }
-                ]
+                }
               }
             }
           },
           "401": {
-            "description": "Неверные учетные данные",
-            "examples": {
-              "application/json": {
-                "message": "Invalid credentials"
+            "description": "Invalid credentials",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "Invalid credentials" }
               }
             }
           }
@@ -139,33 +138,34 @@
         "summary": "Обновление токена",
         "parameters": [
           {
-            "in": "body",
             "name": "body",
-            "description": "Текущий refresh токен",
+            "in": "body",
             "required": true,
             "schema": {
               "type": "object",
               "properties": {
-                "refresh_token": { "type": "string" }
+                "refresh_token": { "type": "string", "example": "some_refresh_token" }
               }
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Токен обновлен",
-            "examples": {
-              "application/json": {
-                "access_token": "eyJhbGciOiJIUzI1NiIsInR5...",
-                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5..."
+            "description": "Tokens refreshed successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "access_token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+                "refresh_token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
               }
             }
           },
           "401": {
-            "description": "Неверный refresh токен",
-            "examples": {
-              "application/json": {
-                "message": "Invalid refresh token"
+            "description": "Invalid refresh token",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "Invalid refresh token" }
               }
             }
           }
@@ -182,39 +182,40 @@
             "in": "path",
             "required": true,
             "type": "integer",
-            "description": "ID пользователя"
+            "example": 1
           }
         ],
         "responses": {
           "200": {
-            "description": "Профиль пользователя",
-            "examples": {
-              "application/json": {
-                "id": 1,
-                "username": "johndoe",
-                "name": "John Doe",
-                "city": "New York",
-                "birthdate": "1990-01-01",
-                "dogs": [
-                  {
-                    "id": 1,
-                    "name": "Buddy",
-                    "breed": "Golden Retriever",
-                    "age": 3
+            "description": "User profile retrieved successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "integer", "example": 1 },
+                "username": { "type": "string", "example": "johndoe" },
+                "name": { "type": "string", "example": "John Doe" },
+                "city": { "type": "string", "example": "New York" },
+                "birthdate": { "type": "string", "example": "2000-01-01" },
+                "dogs": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Dog"
                   }
-                ]
+                }
               }
             }
           },
           "404": {
-            "description": "Пользователь не найден",
-            "examples": {
-              "application/json": {
-                "message": "User not found"
+            "description": "User not found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "User not found" }
               }
             }
           }
-        }
+        },
+        "security": [{ "Bearer": [] }]
       },
       "put": {
         "tags": ["Users"],
@@ -225,96 +226,47 @@
             "in": "path",
             "required": true,
             "type": "integer",
-            "description": "ID пользователя"
+            "example": 1
           },
           {
-            "in": "body",
             "name": "body",
-            "description": "Обновленные данные профиля",
+            "in": "body",
             "required": true,
             "schema": {
               "type": "object",
               "properties": {
-                "name": { "type": "string" },
-                "city": { "type": "string" },
-                "birthdate": { "type": "string", "format": "date" }
+                "username": { "type": "string", "example": "newusername" },
+                "name": { "type": "string", "example": "John Doe" },
+                "city": { "type": "string", "example": "New York" },
+                "birthdate": { "type": "string", "example": "2000-01-01" }
               }
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Профиль обновлен",
-            "examples": {
-              "application/json": {
-                "message": "Profile updated successfully"
-              }
-            }
-          },
-          "404": {
-            "description": "Пользователь не найден",
-            "examples": {
-              "application/json": {
-                "message": "User not found"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/users/{id}/dogs": {
-      "post": {
-        "tags": ["Dogs"],
-        "summary": "Создание собаки для пользователя",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "description": "ID пользователя"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "description": "Данные собаки",
-            "required": true,
+            "description": "Profile updated successfully",
             "schema": {
               "type": "object",
               "properties": {
-                "name": { "type": "string" },
-                "breed": { "type": "string" },
-                "age": { "type": "integer" }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Собака создана",
-            "examples": {
-              "application/json": {
-                "message": "Dog created successfully",
-                "dog": {
-                  "id": 1,
-                  "name": "Buddy",
-                  "breed": "Golden Retriever",
-                  "age": 3,
-                  "ownerId": 1
-                }
+                "message": { "type": "string", "example": "Profile updated successfully" }
               }
             }
           },
           "404": {
-            "description": "Пользователь не найден",
-            "examples": {
-              "application/json": {
-                "message": "User not found"
+            "description": "User not found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "User not found" }
               }
             }
           }
-        }
-      },
+        },
+        "security": [{ "Bearer": [] }]
+      }
+    },
+    "/users/{id}/dogs": {
       "get": {
         "tags": ["Dogs"],
         "summary": "Получение списка собак пользователя",
@@ -324,198 +276,302 @@
             "in": "path",
             "required": true,
             "type": "integer",
-            "description": "ID пользователя"
+            "example": 1
           }
         ],
         "responses": {
           "200": {
-            "description": "Список собак",
-            "examples": {
-              "application/json": [
-                {
-                  "id": 1,
-                  "name": "Buddy",
-                  "breed": "Golden Retriever",
-                  "age": 3,
-                  "ownerId": 1
-                },
-                {
-                  "id": 2,
-                  "name": "Max",
-                  "breed": "Labrador",
-                  "age": 2,
-                  "ownerId": 1
-                }
-              ]
-            }
-          },
-          "404": {
-            "description": "Пользователь не найден",
-            "examples": {
-              "application/json": {
-                "message": "User not found"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/users/{userId}/dogs/{dogId}": {
-      "get": {
-        "tags": ["Dogs"],
-        "summary": "Получение данных о конкретной собаке пользователя",
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "description": "ID пользователя"
-          },
-          {
-            "name": "dogId",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "description": "ID собаки"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Данные собаки",
-            "examples": {
-              "application/json": {
-                "id": 1,
-                "name": "Buddy",
-                "breed": "Golden Retriever",
-                "age": 3,
-                "ownerId": 1
+            "description": "List of user's dogs retrieved successfully",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Dog"
               }
             }
           },
           "404": {
-            "description": "Собака или пользователь не найдены",
-            "examples": {
-              "application/json": {
-                "message": "User not found"
+            "description": "User not found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "User not found" }
               }
             }
           }
-        }
+        },
+        "security": [{ "Bearer": [] }]
       },
-      "put": {
+      "post": {
         "tags": ["Dogs"],
-        "summary": "Обновление данных о конкретной собаке пользователя",
+        "summary": "Создание собаки для пользователя",
         "parameters": [
           {
-            "name": "userId",
+            "name": "id",
             "in": "path",
             "required": true,
             "type": "integer",
-            "description": "ID пользователя"
+            "example": 1
           },
           {
-            "name": "dogId",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "description": "ID собаки"
-          },
-          {
-            "in": "body",
             "name": "body",
-            "description": "Обновленные данные собаки",
+            "in": "body",
             "required": true,
             "schema": {
               "type": "object",
               "properties": {
-                "name": { "type": "string" },
-                "breed": { "type": "string" },
-                "age": { "type": "integer" }
+                "name": { "type": "string", "example": "Rex" },
+                "weight": { "type": "number", "example": 12.5 },
+                "breed": { "type": "string", "example": "Labrador Retriever" }
               }
             }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Собака обновлена",
-            "examples": {
-              "application/json": {
-                "message": "Dog updated successfully",
+          "201": {
+            "description": "Dog created successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "Dog created successfully" },
                 "dog": {
-                  "id": 1,
-                  "name": "Buddy",
-                  "breed": "Golden Retriever",
-                  "age": 3,
-                  "ownerId": 1
+                  "$ref": "#/definitions/Dog"
                 }
               }
             }
           },
-          "403": {
-            "description": "Доступ запрещен",
-            "examples": {
-              "application/json": {
-                "message": "Access denied"
+          "400": {
+            "description": "Validation error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "msg": { "type": "string", "example": "Name is required" },
+                      "param": { "type": "string", "example": "name" },
+                      "location": { "type": "string", "example": "body" }
+                    }
+                  }
+                }
               }
             }
           },
           "404": {
-            "description": "Собака или пользователь не найдены",
-            "examples": {
-              "application/json": {
-                "message": "User not found"
+            "description": "User not found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "User not found" }
               }
             }
           }
-        }
-      },
-      "delete": {
+        },
+        "security": [{ "Bearer": [] }]
+      }
+    },
+    "/users/{userId}/dogs/{dogId}": {
+      "put": {
         "tags": ["Dogs"],
-        "summary": "Удаление конкретной собаки пользователя",
+        "summary": "Обновление данных о собаке пользователя",
         "parameters": [
           {
             "name": "userId",
             "in": "path",
             "required": true,
             "type": "integer",
-            "description": "ID пользователя"
+            "example": 1
           },
           {
             "name": "dogId",
             "in": "path",
             "required": true,
             "type": "integer",
-            "description": "ID собаки"
+            "example": 1
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string", "example": "Rex" },
+                "weight": { "type": "number", "example": 12.5 }
+              }
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Собака удалена",
-            "examples": {
-              "application/json": {
-                "message": "Dog deleted successfully"
+            "description": "Dog updated successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "Dog updated successfully" },
+                "dog": {
+                  "$ref": "#/definitions/Dog"
+                }
               }
             }
           },
-          "403": {
-            "description": "Доступ запрещен",
-            "examples": {
-              "application/json": {
-                "message": "Access denied"
+          "400": {
+            "description": "Validation error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "msg": { "type": "string", "example": "Weight must be a positive number" },
+                      "param": { "type": "string", "example": "weight" },
+                      "location": { "type": "string", "example": "body" }
+                    }
+                  }
+                }
               }
             }
           },
           "404": {
-            "description": "Собака или пользователь не найдены",
-            "examples": {
-              "application/json": {
-                "message": "User not found"
+            "description": "User or dog not found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "User or dog not found" }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "Access denied" }
+              }
+            }
+          }
+        },
+        "security": [{ "Bearer": [] }]
+      },
+      "delete": {
+        "tags": ["Dogs"],
+        "summary": "Удаление собаки пользователя",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "example": 1
+          },
+          {
+            "name": "dogId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dog deleted successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "Dog deleted successfully" }
+              }
+            }
+          },
+          "404": {
+            "description": "User or dog not found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "User or dog not found" }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "Access denied" }
+              }
+            }
+          }
+        },
+        "security": [{ "Bearer": [] }]
+      }
+    },
+    "/breeds": {
+      "get": {
+        "tags": ["Breeds"],
+        "summary": "Получить список пород собак",
+        "description": "Возвращает список возможных пород собак",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Список пород",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "example": ["Labrador Retriever", "German Shepherd", "Golden Retriever", "French Bulldog"]
+            }
+          },
+          "500": {
+            "description": "Ошибка сервера",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "Error retrieving breeds" },
+                "error": { "type": "string", "example": "Internal Server Error" }
               }
             }
           }
         }
       }
+    }
+  },
+  "definitions": {
+    "User": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer", "example": 1 },
+        "username": { "type": "string", "example": "johndoe" },
+        "name": { "type": "string", "example": "John Doe" },
+        "city": { "type": "string", "example": "New York" },
+        "birthdate": { "type": "string", "example": "2000-01-01" },
+        "dogs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Dog"
+          }
+        }
+      }
+    },
+    "Dog": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer", "example": 1 },
+        "name": { "type": "string", "example": "Rex" },
+        "weight": { "type": "number", "example": 12.5 },
+        "breed": { "type": "string", "example": "Labrador Retriever" },
+        "ownerId": { "type": "integer", "example": 1 }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Введите токен в формате 'Bearer <token>'"
     }
   }
 }
