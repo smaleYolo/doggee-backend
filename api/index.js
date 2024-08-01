@@ -4,14 +4,11 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require('../swagger.json');
+const swaggerDocument = require('./swagger.json');
 const { check, validationResult } = require('express-validator');
-const db = require('../models');
-const User = db.User;
-const Dog = db.Dog;
-const RefreshToken = db.RefreshToken;
 
 const app = express();
+const port = process.env.PORT || 3001;
 
 const SECRET_KEY = 'doggee-secret';
 const REFRESH_SECRET_KEY = 'doggee-refresh-secret';
@@ -22,12 +19,19 @@ const refreshExpiresIn = '7d';
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+// Настраиваем CORS
 app.use(
     cors({
         origin: 'http://localhost:5173',
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
+        optionsSuccessStatus: 204
     })
 );
+
+// Middleware для обработки preflight-запросов
+app.options('*', cors());
 
 function createToken(payload) {
     return jwt.sign(payload, SECRET_KEY, { expiresIn });
@@ -54,6 +58,12 @@ async function isAuthenticated({ username, password }) {
     if (!user) return false;
     return bcrypt.compareSync(password, user.password);
 }
+
+// Импортируйте модели и ассоциации
+const db = require('./models');
+const User = db.User;
+const Dog = db.Dog;
+const RefreshToken = db.RefreshToken; // Импорт модели RefreshToken
 
 // Middleware для проверки авторизации
 app.use((req, res, next) => {
@@ -437,7 +447,7 @@ app.delete('/users/:userId/dogs/:dogId', async (req, res) => {
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 db.sequelize.sync().then(() => {
-    console.log(`Server is running on Vercel`);
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+    });
 });
-
-module.exports = app;
