@@ -6,9 +6,10 @@ const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const fs = require('fs');
 const path = require('path');
+const swaggerDocument = require('../swagger.json');
 const { check, validationResult } = require('express-validator');
 
-const swaggerDocument = JSON.parse(fs.readFileSync(path.join(__dirname, '../swagger.json')));
+
 
 const app = express();
 const port = process.env.PORT || 3001;
