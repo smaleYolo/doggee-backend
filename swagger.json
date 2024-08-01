@@ -45,7 +45,7 @@
             },
             "examples": {
               "application/json": {
-                "message": "User created successfully",
+                "message": "backend.success.userCreated",
                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "refresh_token": "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4...",
                 "userId": 1
@@ -70,6 +70,11 @@
               "type": "object",
               "properties": {
                 "message": { "type": "string" }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "message": "backend.failure.userAlreadyExists"
               }
             }
           }
@@ -102,6 +107,7 @@
             "schema": {
               "type": "object",
               "properties": {
+                "message": { "type": "string" },
                 "access_token": { "type": "string" },
                 "refresh_token": { "type": "string" },
                 "userId": { "type": "integer" }
@@ -109,6 +115,7 @@
             },
             "examples": {
               "application/json": {
+                "message": "backend.success.userLogin",
                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "refresh_token": "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4...",
                 "userId": 1
@@ -133,6 +140,11 @@
               "type": "object",
               "properties": {
                 "message": { "type": "string" }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "message": "backend.failure.invalidCredentials"
               }
             }
           }
@@ -164,12 +176,14 @@
             "schema": {
               "type": "object",
               "properties": {
+                "message": { "type": "string" },
                 "access_token": { "type": "string" },
                 "refresh_token": { "type": "string" }
               }
             },
             "examples": {
               "application/json": {
+                "message": "backend.success.tokenRefreshed",
                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "refresh_token": "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
               }
@@ -181,6 +195,11 @@
               "type": "object",
               "properties": {
                 "message": { "type": "string" }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "message": "backend.failure.invalidRefreshToken"
               }
             }
           }
@@ -207,6 +226,7 @@
             "schema": {
               "type": "object",
               "properties": {
+                "message": { "type": "string" },
                 "id": { "type": "integer" },
                 "username": { "type": "string" },
                 "name": { "type": "string" },
@@ -220,6 +240,7 @@
             },
             "examples": {
               "application/json": {
+                "message": "backend.success.userProfileRetrieved",
                 "id": 1,
                 "username": "john_doe",
                 "name": "John Doe",
@@ -244,6 +265,11 @@
               "type": "object",
               "properties": {
                 "message": { "type": "string" }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "message": "backend.failure.userNotFound"
               }
             }
           }
@@ -287,7 +313,7 @@
             },
             "examples": {
               "application/json": {
-                "message": "Profile updated successfully"
+                "message": "backend.success.profileUpdated"
               }
             }
           },
@@ -297,6 +323,11 @@
               "type": "object",
               "properties": {
                 "message": { "type": "string" }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "message": "backend.failure.userNotFound"
               }
             }
           }
@@ -321,20 +352,29 @@
           "200": {
             "description": "User's dogs retrieved successfully",
             "schema": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/Dog" }
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" },
+                "dogs": {
+                  "type": "array",
+                  "items": { "$ref": "#/definitions/Dog" }
+                }
+              }
             },
             "examples": {
-              "application/json": [
-                {
-                  "id": 1,
-                  "name": "Buddy",
-                  "breed": "Labrador Retriever",
-                  "birthdate": "2015-06-15",
-                  "weight": 30.5,
-                  "ownerId": 1
-                }
-              ]
+              "application/json": {
+                "message": "backend.success.userDogsRetrieved",
+                "dogs": [
+                  {
+                    "id": 1,
+                    "name": "Buddy",
+                    "breed": "Labrador Retriever",
+                    "birthdate": "2015-06-15",
+                    "weight": 30.5,
+                    "ownerId": 1
+                  }
+                ]
+              }
             }
           },
           "404": {
@@ -343,6 +383,11 @@
               "type": "object",
               "properties": {
                 "message": { "type": "string" }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "message": "backend.failure.userNotFound"
               }
             }
           }
@@ -388,7 +433,7 @@
             },
             "examples": {
               "application/json": {
-                "message": "Dog created successfully",
+                "message": "backend.success.dogCreated",
                 "dog": {
                   "id": 1,
                   "name": "Buddy",
@@ -406,6 +451,11 @@
               "type": "object",
               "properties": {
                 "message": { "type": "string" }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "message": "backend.failure.userNotFound"
               }
             }
           },
@@ -433,15 +483,40 @@
           "200": {
             "description": "Breeds retrieved successfully",
             "schema": {
-              "type": "array",
-              "items": { "type": "string" }
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" },
+                "data": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
             },
             "examples": {
-              "application/json": [
-                "dogBreeds.LabradorRetriever",
-                "dogBreeds.GermanShepherd",
-                "dogBreeds.GoldenRetriever"
-              ]
+              "application/json": {
+                "message": "backend.success.breedsRetrieved",
+                "data": [
+                  "dogBreeds.LabradorRetriever",
+                  "dogBreeds.GermanShepherd",
+                  "dogBreeds.GoldenRetriever"
+                ]
+              }
+            }
+          },
+          "500": {
+            "description": "Error retrieving breeds",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" },
+                "error": { "type": "string" }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "message": "backend.failure.errorRetrievingBreeds",
+                "error": "Internal server error"
+              }
             }
           }
         }
