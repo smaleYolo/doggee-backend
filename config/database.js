@@ -1,8 +1,10 @@
 const { Sequelize } = require('sequelize');
-require('dotenv').config(); // Импортируйте и настройте dotenv
+const pg = require('pg'); // Импортируйте модуль pg
+require('dotenv').config(); 
 
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
+    dialectModule: pg,
     protocol: 'postgres',
     logging: false // Отключение логов Sequelize
 });
