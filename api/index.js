@@ -60,7 +60,7 @@ async function isAuthenticated({ username, password }) {
 }
 
 // Импортируйте модели и ассоциации
-const db = require('./models');
+const db = require('../models');
 const User = db.User;
 const Dog = db.Dog;
 const RefreshToken = db.RefreshToken; // Импорт модели RefreshToken
