@@ -3,13 +3,14 @@ const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const swaggerUi = require('swagger-ui-express');
-const fs = require('fs');
-const path = require('path');
-const swaggerDocument = require('../swagger.json');
 const { check, validationResult } = require('express-validator');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsDoc = require('swagger-jsdoc');
 
-
+const db = require('../models');
+const User = db.User;
+const Dog = db.Dog;
+const RefreshToken = db.RefreshToken;
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -61,11 +62,6 @@ async function isAuthenticated({ username, password }) {
     return bcrypt.compareSync(password, user.password);
 }
 
-const db = require('../models');
-const User = db.User;
-const Dog = db.Dog;
-const RefreshToken = db.RefreshToken;
-
 app.use((req, res, next) => {
     if (
         req.originalUrl === '/api-docs' ||
@@ -100,89 +96,228 @@ app.use((req, res, next) => {
     }
 });
 
-app.post(
-    '/auth/register',
-    [
-        check('username')
-            .isLength({ min: 5 })
-            .withMessage('backend.failure.usernameMinLength'),
-        check('password')
-            .isLength({ min: 5 })
-            .withMessage('backend.failure.passwordMinLength'),
-    ],
-    async (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-        const { username, password } = req.body;
-        const existingUser = await User.findOne({ where: { username } });
+// Swagger setup
+const swaggerOptions = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'Doggee API',
+            version: '1.0.0',
+            description: 'API documentation for Doggee backend',
+        },
+        servers: [
+            {
+                url: 'https://backend-doggee.vercel.app',
+                description: "Prod"
+            },
+            {
+                url: 'http://localhost:3001',
+                description: "Local server"
+            },
+        ],
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT',
+                },
+            },
+        },
+        security: [{
+            bearerAuth: []
+        }],
+    },
+    apis: ['./index.js'], // путь к файлу с вашими эндпоинтами
+};
 
-        if (existingUser) {
-            res.status(401).json({ message: 'backend.failure.userAlreadyExists' });
-            return;
-        }
+const swaggerSpec = swaggerJsDoc(swaggerOptions);
 
-        const hashedPassword = bcrypt.hashSync(password, 8);
-        const user = await User.create({ username, password: hashedPassword });
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-        const access_token = createToken({ username: user.username, id: user.id });
-        const refresh_token = createRefreshToken({
-            username: user.username,
-            id: user.id,
-        });
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - username
+ *         - password
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: The auto-generated id of the user
+ *         username:
+ *           type: string
+ *           description: The username of the user
+ *         password:
+ *           type: string
+ *           description: The password of the user
+ *     Dog:
+ *       type: object
+ *       required:
+ *         - name
+ *         - weight
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: The auto-generated id of the dog
+ *         name:
+ *           type: string
+ *           description: The name of the dog
+ *         weight:
+ *           type: number
+ *           description: The weight of the dog
+ */
 
-        await RefreshToken.create({ token: refresh_token, userId: user.id });
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: Authentication endpoints
+ */
 
-        res.status(201).json({
-            message: 'backend.success.userCreated',
-            access_token,
-            refresh_token,
-            userId: user.id,
-        });
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: User already exists
+ */
+app.post('/auth/register', [
+    check('username').isLength({ min: 5 }).withMessage('backend.failure.usernameMinLength'),
+    check('password').isLength({ min: 5 }).withMessage('backend.failure.passwordMinLength'),
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
     }
-);
+    const { username, password } = req.body;
+    const existingUser = await User.findOne({ where: { username } });
 
-app.post(
-    '/auth/login',
-    [
-        check('username')
-            .isLength({ min: 5 })
-            .withMessage('backend.failure.usernameMinLength'),
-        check('password')
-            .isLength({ min: 5 })
-            .withMessage('backend.failure.passwordMinLength'),
-    ],
-    async (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-        const { username, password } = req.body;
-
-        if (!(await isAuthenticated({ username, password }))) {
-            res.status(401).json({ message: 'backend.failure.invalidCredentials' });
-            return;
-        }
-
-        const user = await User.findOne({ where: { username } });
-        const access_token = createToken({ username: user.username, id: user.id });
-        const refresh_token = createRefreshToken({
-            username: user.username,
-            id: user.id,
-        });
-
-        await RefreshToken.create({ token: refresh_token, userId: user.id });
-
-        res.status(200).json({
-            message: 'backend.success.userLogin',
-            access_token,
-            refresh_token,
-            userId: user.id,
-        });
+    if (existingUser) {
+        res.status(401).json({ message: 'backend.failure.userAlreadyExists' });
+        return;
     }
-);
 
+    const hashedPassword = bcrypt.hashSync(password, 8);
+    const user = await User.create({ username, password: hashedPassword });
+
+    const access_token = createToken({ username: user.username, id: user.id });
+    const refresh_token = createRefreshToken({ username: user.username, id: user.id });
+
+    await RefreshToken.create({ token: refresh_token, userId: user.id });
+
+    res.status(201).json({
+        message: 'backend.success.userCreated',
+        access_token,
+        refresh_token,
+        userId: user.id,
+    });
+});
+
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Login a user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User logged in successfully
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Invalid credentials
+ */
+app.post('/auth/login', [
+    check('username').isLength({ min: 5 }).withMessage('backend.failure.usernameMinLength'),
+    check('password').isLength({ min: 5 }).withMessage('backend.failure.passwordMinLength'),
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    const { username, password } = req.body;
+
+    if (!(await isAuthenticated({ username, password }))) {
+        res.status(401).json({ message: 'backend.failure.invalidCredentials' });
+        return;
+    }
+
+    const user = await User.findOne({ where: { username } });
+    const access_token = createToken({ username: user.username, id: user.id });
+    const refresh_token = createRefreshToken({ username: user.username, id: user.id });
+
+    await RefreshToken.create({ token: refresh_token, userId: user.id });
+
+    res.status(200).json({
+        message: 'backend.success.userLogin',
+        access_token,
+        refresh_token,
+        userId: user.id,
+    });
+});
+
+/**
+ * @swagger
+ * /auth/refresh-token:
+ *   post:
+ *     summary: Refresh access token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refresh_token
+ *             properties:
+ *               refresh_token:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *       401:
+ *         description: Invalid refresh token
+ */
 app.post('/auth/refresh-token', async (req, res) => {
     const { refresh_token } = req.body;
 
@@ -221,6 +356,32 @@ app.post('/auth/refresh-token', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: User management endpoints
+ */
+
+/**
+ * @swagger
+ * /users/{id}/profile:
+ *   get:
+ *     summary: Get user profile
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The user id
+ *     responses:
+ *       200:
+ *         description: User profile retrieved successfully
+ *       404:
+ *         description: User not found
+ */
 app.get('/users/:id/profile', async (req, res) => {
     const user = await User.findByPk(req.params.id, {
         include: [Dog],
@@ -240,6 +401,39 @@ app.get('/users/:id/profile', async (req, res) => {
     });
 });
 
+/**
+ * @swagger
+ * /users/{id}/profile:
+ *   put:
+ *     summary: Update user profile
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The user id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               city:
+ *                 type: string
+ *               birthdate:
+ *                 type: string
+ *                 format: date
+ *     responses:
+ *       200:
+ *         description: User profile updated successfully
+ *       404:
+ *         description: User not found
+ */
 app.put('/users/:id/profile', async (req, res) => {
     const user = await User.findByPk(req.params.id);
     if (!user) {
@@ -250,6 +444,48 @@ app.put('/users/:id/profile', async (req, res) => {
     res.status(200).json({ message: 'backend.success.profileUpdated' });
 });
 
+/**
+ * @swagger
+ * tags:
+ *   name: Dogs
+ *   description: Dog management endpoints
+ */
+
+/**
+ * @swagger
+ * /users/{id}/dogs:
+ *   post:
+ *     summary: Add a new dog for the user
+ *     tags: [Dogs]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The user id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - weight
+ *             properties:
+ *               name:
+ *                 type: string
+ *               weight:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Dog created successfully
+ *       400:
+ *         description: Invalid input
+ *       404:
+ *         description: User not found
+ */
 app.post('/users/:id/dogs', [
     check('name').notEmpty().withMessage('backend.failure.nameRequired'),
     check('weight').isFloat({ min: 0 }).withMessage('backend.failure.positiveWeight'),
@@ -275,59 +511,18 @@ app.post('/users/:id/dogs', [
     });
 });
 
-const dogBreeds = [
-    'dogBreeds.LabradorRetriever',
-    'dogBreeds.GermanShepherd',
-    'dogBreeds.GoldenRetriever',
-    'dogBreeds.FrenchBulldog',
-    'dogBreeds.Bulldog',
-    'dogBreeds.Poodle',
-    'dogBreeds.Beagle',
-    'dogBreeds.Rottweiler',
-    'dogBreeds.GermanShorthairedPointer',
-    'dogBreeds.YorkshireTerrier',
-    'dogBreeds.Boxer',
-    'dogBreeds.Dachshund',
-    'dogBreeds.PembrokeWelshCorgi',
-    'dogBreeds.SiberianHusky',
-    'dogBreeds.AustralianShepherd',
-    'dogBreeds.GreatDane',
-    'dogBreeds.DobermanPinscher',
-    'dogBreeds.CavalierKingCharlesSpaniel',
-    'dogBreeds.MiniatureSchnauzer',
-    'dogBreeds.ShihTzu',
-    'dogBreeds.BostonTerrier',
-    'dogBreeds.BerneseMountainDog',
-    'dogBreeds.Pomeranian',
-    'dogBreeds.Havanese',
-    'dogBreeds.ShetlandSheepdog',
-    'dogBreeds.Brittany',
-    'dogBreeds.EnglishSpringerSpaniel',
-    'dogBreeds.Pug',
-    'dogBreeds.Mastiff',
-    'dogBreeds.CockerSpaniel',
-    'dogBreeds.Vizsla',
-    'dogBreeds.CaneCorso',
-    'dogBreeds.Chihuahua',
-    'dogBreeds.BorderCollie',
-    'dogBreeds.BassetHound',
-    'dogBreeds.BelgianMalinois',
-    'dogBreeds.WestHighlandWhiteTerrier',
-    'dogBreeds.Collie',
-    'dogBreeds.Weimaraner',
-    'dogBreeds.Newfoundland',
-    'dogBreeds.RhodesianRidgeback',
-    'dogBreeds.ShibaInu',
-    'dogBreeds.BichonFrise',
-    'dogBreeds.Akita',
-    'dogBreeds.StBernard',
-    'dogBreeds.Bloodhound',
-    'dogBreeds.ChesapeakeBayRetriever',
-    'dogBreeds.Samoyed',
-    'dogBreeds.AustralianCattleDog',
-    'dogBreeds.Whippet'
-];
-
+/**
+ * @swagger
+ * /breeds:
+ *   get:
+ *     summary: Get all dog breeds
+ *     tags: [Dogs]
+ *     responses:
+ *       200:
+ *         description: Breeds retrieved successfully
+ *       500:
+ *         description: Error retrieving breeds
+ */
 app.get('/breeds', async (req, res) => {
     try {
         res.status(200).json({
@@ -339,6 +534,25 @@ app.get('/breeds', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /users/{id}/dogs:
+ *   get:
+ *     summary: Get all dogs for the user
+ *     tags: [Dogs]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The user id
+ *     responses:
+ *       200:
+ *         description: User dogs retrieved successfully
+ *       404:
+ *         description: User not found
+ */
 app.get('/users/:id/dogs', async (req, res) => {
     const user = await User.findByPk(req.params.id, { include: Dog });
     if (!user) {
@@ -351,6 +565,46 @@ app.get('/users/:id/dogs', async (req, res) => {
     });
 });
 
+/**
+ * @swagger
+ * /users/{userId}/dogs/{dogId}:
+ *   put:
+ *     summary: Update dog details
+ *     tags: [Dogs]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The user id
+ *       - in: path
+ *         name: dogId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The dog id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               weight:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Dog updated successfully
+ *       400:
+ *         description: Invalid input
+ *       404:
+ *         description: User or dog not found
+ *       403:
+ *         description: Access denied
+ */
 app.put('/users/:userId/dogs/:dogId', [
     check('weight').optional().isFloat({ min: 0 }).withMessage('backend.failure.positiveWeight'),
 ], async (req, res) => {
@@ -383,31 +637,33 @@ app.put('/users/:userId/dogs/:dogId', [
     });
 });
 
-app.put('/users/:userId/dogs/:dogId', async (req, res) => {
-    const user = await User.findByPk(req.params.userId, { include: Dog });
-    if (!user) {
-        res.status(404).json({ message: 'backend.failure.userNotFound' });
-        return;
-    }
-
-    const dog = user.Dogs.find(d => d.id === parseInt(req.params.dogId));
-    if (!dog) {
-        res.status(404).json({ message: 'backend.failure.dogNotFound' });
-        return;
-    }
-
-    if (dog.ownerId !== req.user.id) {
-        res.status(403).json({ message: 'backend.failure.accessDenied' });
-        return;
-    }
-
-    await dog.update(req.body);
-    res.status(200).json({
-        message: 'backend.success.dogUpdated',
-        dog
-    });
-});
-
+/**
+ * @swagger
+ * /users/{userId}/dogs/{dogId}:
+ *   delete:
+ *     summary: Delete a dog
+ *     tags: [Dogs]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The user id
+ *       - in: path
+ *         name: dogId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The dog id
+ *     responses:
+ *       200:
+ *         description: Dog deleted successfully
+ *       404:
+ *         description: User or dog not found
+ *       403:
+ *         description: Access denied
+ */
 app.delete('/users/:userId/dogs/:dogId', async (req, res) => {
     const user = await User.findByPk(req.params.userId, { include: Dog });
     if (!user) {
@@ -429,8 +685,6 @@ app.delete('/users/:userId/dogs/:dogId', async (req, res) => {
     await dog.destroy();
     res.status(200).json({ message: 'backend.success.dogDeleted' });
 });
-
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 db.sequelize.sync().then(() => {
     app.listen(port, () => {
