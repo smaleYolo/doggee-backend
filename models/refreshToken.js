@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
-const User = require('./user'); // Импорт модели User
+const User = require('./user');
 
 const RefreshToken = sequelize.define('RefreshToken', {
     id: {

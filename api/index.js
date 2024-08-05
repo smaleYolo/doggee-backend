@@ -98,7 +98,7 @@ app.use((req, res, next) => {
 
 // Swagger setup
 const swaggerOptions = {
-    definition: {
+    swaggerDefinition: {
         openapi: '3.0.0',
         info: {
             title: 'Doggee API',
@@ -107,12 +107,12 @@ const swaggerOptions = {
         },
         servers: [
             {
-                url: 'https://backend-doggee.vercel.app',
-                description: "Prod"
+                url: 'http://localhost:3001',
+                description: 'local server',
             },
             {
-                url: 'http://localhost:3001',
-                description: "Local server"
+                url: 'https://backend-doggee.vercel.app',
+                description: 'Prod server',
             },
         ],
         components: {
@@ -128,7 +128,7 @@ const swaggerOptions = {
             bearerAuth: []
         }],
     },
-    apis: ['./index.js'], // путь к файлу с вашими эндпоинтами
+    apis: ['../api/index.js'],
 };
 
 const swaggerSpec = swaggerJsDoc(swaggerOptions);
