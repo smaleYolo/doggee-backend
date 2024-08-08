@@ -24,9 +24,22 @@ const refreshExpiresIn = '7d';
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://react-doggee-vite.vercel.app',
+    'http://192.168.1.67:3000',
+    'http://localhost:3000'
+];
+
 app.use(
     cors({
-        origin: 'http://localhost:5173',
+        origin: function (origin, callback) {
+            if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
